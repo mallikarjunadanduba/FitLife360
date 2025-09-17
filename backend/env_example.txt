@@ -1,0 +1,28 @@
+# Database Configuration
+DATABASE_URL=postgresql://postgres:root@localhost:5432/fitlife
+
+# JWT Secret Key
+SECRET_KEY=fitlife360-super-secret-jwt-key-2024
+
+# Twilio Configuration (for SMS)
+TWILIO_ACCOUNT_SID=your-twilio-account-sid
+TWILIO_AUTH_TOKEN=your-twilio-auth-token
+TWILIO_PHONE_NUMBER=your-twilio-phone-number
+
+# Razorpay Configuration (for payments)
+RAZORPAY_KEY_ID=rzp_test_RIaOOBUcPzqnqM
+RAZORPAY_KEY_SECRET=F7SucDajhR0B7Ryofiilmm9L
+
+# Email Configuration
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+EMAIL_USER=mempty238@gmail.com
+EMAIL_PASSWORD=uxtatjqrichxfmls
+
+# Redis Configuration (for caching)
+REDIS_URL=redis://localhost:6379
+
+# Application Configuration
+DEBUG=True
+HOST=0.0.0.0
+PORT=8000
