@@ -2,11 +2,116 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
-from models import Consultant, AvailabilitySlot, User, Consultation
+from models import Consultant, AvailabilitySlot, User, Consultation, ConsultationStatus
 from schemas import ConsultantCreate, ConsultantResponse, AvailabilitySlotCreate, AvailabilitySlotResponse
 from auth import get_current_active_user, get_consultant_user
 
 router = APIRouter()
+
+@router.get("/dashboard")
+async def get_consultant_dashboard(
+    current_user: User = Depends(get_consultant_user),
+    db: Session = Depends(get_db)
+):
+    """Get consultant dashboard data"""
+    # Get consultant profile
+    consultant = db.query(Consultant).filter(Consultant.user_id == current_user.id).first()
+    if not consultant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Consultant profile not found"
+        )
+    
+    # Debug: Check consultant details
+    print(f"Found consultant {consultant.id} for user {current_user.id}")
+    print(f"Consultant specialization: {consultant.specialization}")
+    
+    # Get consultation statistics
+    total_consultations = db.query(Consultation).filter(Consultation.consultant_id == consultant.id).count()
+    completed_consultations = db.query(Consultation).filter(
+        Consultation.consultant_id == consultant.id,
+        Consultation.status == ConsultationStatus.COMPLETED
+    ).count()
+    pending_consultations = db.query(Consultation).filter(
+        Consultation.consultant_id == consultant.id,
+        Consultation.status == ConsultationStatus.SCHEDULED
+    ).count()
+    
+    # Debug: Check consultation statistics
+    print(f"Consultation stats - Total: {total_consultations}, Completed: {completed_consultations}, Pending: {pending_consultations}")
+    
+    # Calculate total earnings (assuming hourly_rate * completed consultations)
+    total_earnings = completed_consultations * consultant.hourly_rate if consultant.hourly_rate else 0
+    
+    # Get average rating (simplified - you might want to implement a proper rating system)
+    average_rating = 4.5  # Placeholder - implement actual rating calculation
+    
+    # Get recent consultations
+    from sqlalchemy.orm import joinedload
+    recent_consultations = db.query(Consultation).options(
+        joinedload(Consultation.user)
+    ).filter(
+        Consultation.consultant_id == consultant.id
+    ).order_by(Consultation.scheduled_time.desc()).limit(5).all()
+    
+    # Get upcoming consultations
+    upcoming_consultations = db.query(Consultation).options(
+        joinedload(Consultation.user)
+    ).filter(
+        Consultation.consultant_id == consultant.id,
+        Consultation.status == ConsultationStatus.SCHEDULED
+    ).order_by(Consultation.scheduled_time.asc()).limit(5).all()
+    
+    # Debug: Check all consultations for this consultant to see their statuses
+    all_consultations = db.query(Consultation).filter(Consultation.consultant_id == consultant.id).all()
+    print(f"All consultations for consultant {consultant.id}:")
+    for c in all_consultations:
+        print(f"  - Consultation {c.id}: Status = {c.status} (type: {type(c.status)})")
+    
+    # Debug: Check if consultations are being fetched
+    print(f"Found {len(recent_consultations)} recent consultations for consultant {consultant.id}")
+    print(f"Found {len(upcoming_consultations)} upcoming consultations for consultant {consultant.id}")
+    for consultation in recent_consultations:
+        print(f"  - Consultation {consultation.id}: {consultation.user.first_name if consultation.user else 'No user'} - Status: {consultation.status}")
+    
+    # Calculate monthly earnings (simplified)
+    monthly_earnings = completed_consultations * consultant.hourly_rate * 0.3 if consultant.hourly_rate else 0
+    
+    # Calculate client satisfaction (simplified)
+    client_satisfaction = 96.5  # Placeholder
+    
+    # Calculate response time (simplified)
+    response_time = 2.3  # Placeholder
+    
+    return {
+        "totalConsultations": total_consultations,
+        "completedConsultations": completed_consultations,
+        "pendingConsultations": pending_consultations,
+        "totalEarnings": total_earnings,
+        "monthlyEarnings": monthly_earnings,
+        "averageRating": average_rating,
+        "clientSatisfaction": client_satisfaction,
+        "responseTime": response_time,
+        "recentConsultations": [
+            {
+                "id": c.id,
+                "client_name": f"{c.user.first_name} {c.user.last_name}" if c.user else "Unknown Client",
+                "scheduled_at": c.scheduled_time.isoformat(),
+                "status": c.status.value if hasattr(c.status, 'value') else str(c.status),
+                "type": consultant.specialization,
+                "rating": c.rating or 5
+            } for c in recent_consultations
+        ],
+        "upcomingConsultations": [
+            {
+                "id": c.id,
+                "client_name": f"{c.user.first_name} {c.user.last_name}" if c.user else "Unknown Client",
+                "scheduled_at": c.scheduled_time.isoformat(),
+                "status": c.status.value if hasattr(c.status, 'value') else str(c.status),
+                "type": consultant.specialization
+            } for c in upcoming_consultations
+        ]
+    }
 
 @router.get("/", response_model=List[ConsultantResponse])
 async def get_consultants(
@@ -170,71 +275,3 @@ async def delete_availability_slot(
     db.commit()
     
     return {"message": "Availability slot deleted successfully"}
-
-@router.get("/dashboard")
-async def get_consultant_dashboard(
-    current_user: User = Depends(get_consultant_user),
-    db: Session = Depends(get_db)
-):
-    """Get consultant dashboard data"""
-    # Get consultant profile
-    consultant = db.query(Consultant).filter(Consultant.user_id == current_user.id).first()
-    if not consultant:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Consultant profile not found"
-        )
-    
-    # Get consultation statistics
-    total_consultations = db.query(Consultation).filter(Consultation.consultant_id == consultant.id).count()
-    completed_consultations = db.query(Consultation).filter(
-        Consultation.consultant_id == consultant.id,
-        Consultation.status == "completed"
-    ).count()
-    pending_consultations = db.query(Consultation).filter(
-        Consultation.consultant_id == consultant.id,
-        Consultation.status.in_(["scheduled", "pending"])
-    ).count()
-    
-    # Calculate total earnings (assuming hourly_rate * completed consultations)
-    total_earnings = completed_consultations * consultant.hourly_rate if consultant.hourly_rate else 0
-    
-    # Get average rating (simplified - you might want to implement a proper rating system)
-    average_rating = 4.5  # Placeholder - implement actual rating calculation
-    
-    # Get recent consultations
-    recent_consultations = db.query(Consultation).filter(
-        Consultation.consultant_id == consultant.id
-    ).order_by(Consultation.scheduled_at.desc()).limit(5).all()
-    
-    # Get upcoming consultations
-    upcoming_consultations = db.query(Consultation).filter(
-        Consultation.consultant_id == consultant.id,
-        Consultation.status.in_(["scheduled", "pending"])
-    ).order_by(Consultation.scheduled_at.asc()).limit(5).all()
-    
-    return {
-        "totalConsultations": total_consultations,
-        "completedConsultations": completed_consultations,
-        "pendingConsultations": pending_consultations,
-        "totalEarnings": total_earnings,
-        "averageRating": average_rating,
-        "recentConsultations": [
-            {
-                "id": c.id,
-                "client_name": c.user.name if c.user else "Unknown Client",
-                "scheduled_at": c.scheduled_at,
-                "status": c.status,
-                "notes": c.notes
-            } for c in recent_consultations
-        ],
-        "upcomingConsultations": [
-            {
-                "id": c.id,
-                "client_name": c.user.name if c.user else "Unknown Client",
-                "scheduled_at": c.scheduled_at,
-                "status": c.status,
-                "notes": c.notes
-            } for c in upcoming_consultations
-        ]
-    }

@@ -1,52 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Container,
   Grid,
   Card,
   CardContent,
   Typography,
   Box,
   Button,
-  LinearProgress,
   Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Divider,
   Avatar,
   IconButton,
   Paper,
   Stack,
+  CircularProgress,
 } from '@mui/material';
 import {
   TrendingUp,
-  People,
   Store,
   Event,
   Calculate,
   LocalShipping,
-  CheckCircle,
-  Schedule,
   FitnessCenter,
-  Restaurant,
-  MonitorWeight,
-  Psychology,
   ArrowForward,
   Notifications,
   Star,
   AccessTime,
   AttachMoney,
+  MonitorWeight,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AnimatedCard from '../components/Common/AnimatedCard';
 import AnimatedSection from '../components/Common/AnimatedSection';
 import AnimatedCounter from '../components/Common/AnimatedCounter';
+import apiClient from '../utils/axiosConfig';
+import NotificationPanel from '../components/Notifications/NotificationPanel';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+      totalConsultations: 0,
+      totalOrders: 0,
+      progressEntries: 0,
+      currentStreak: 0,
+    },
+    recentConsultations: [],
+    recentOrders: [],
+    progressRecords: [],
+    notifications: [],
+  });
+  const [loading, setLoading] = useState(true);
+
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get('/api/users/dashboard');
+      setDashboardData(response.data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        navigate('/login');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
 
   // Redirect admin and consultant users to their respective dashboards
   useEffect(() => {
@@ -54,77 +73,16 @@ const Dashboard = () => {
       navigate('/admin');
     } else if (user?.role === 'CONSULTANT') {
       navigate('/consultant');
+    } else if (user && token) {
+      fetchDashboardData();
     }
-  }, [user, navigate]);
+  }, [user, token, navigate, fetchDashboardData]);
 
-  // Dummy data for demonstration
-  const [dashboardData] = useState({
-    stats: {
-      totalConsultations: 12,
-      totalOrders: 8,
-      progressEntries: 45,
-      currentStreak: 7,
-    },
-    recentConsultations: [
-      {
-        id: 1,
-        consultant: { user: { first_name: 'Dr. Sarah', last_name: 'Johnson' } },
-        scheduled_time: '2024-01-15T10:00:00Z',
-        status: 'completed',
-        type: 'Nutrition Consultation',
-      },
-      {
-        id: 2,
-        consultant: { user: { first_name: 'Mike', last_name: 'Chen' } },
-        scheduled_time: '2024-01-20T14:30:00Z',
-        status: 'scheduled',
-        type: 'Fitness Planning',
-      },
-      {
-        id: 3,
-        consultant: { user: { first_name: 'Emily', last_name: 'Davis' } },
-        scheduled_time: '2024-01-18T09:15:00Z',
-        status: 'completed',
-        type: 'Weight Management',
-      },
-    ],
-    recentOrders: [
-      {
-        id: 1,
-        order_number: 'FL001234',
-        total_amount: 89.99,
-        created_at: '2024-01-15T10:00:00Z',
-        status: 'delivered',
-        items: ['Protein Powder', 'Multivitamin'],
-      },
-      {
-        id: 2,
-        order_number: 'FL001235',
-        total_amount: 156.50,
-        created_at: '2024-01-20T14:30:00Z',
-        status: 'shipped',
-        items: ['Fitness Tracker', 'Resistance Bands'],
-      },
-      {
-        id: 3,
-        order_number: 'FL001236',
-        total_amount: 45.00,
-        created_at: '2024-01-18T09:15:00Z',
-        status: 'processing',
-        items: ['Green Tea Extract'],
-      },
-    ],
-    progressRecords: [
-      { date: '2024-01-20', weight: 165, bodyFat: 18.5, muscle: 45.2 },
-      { date: '2024-01-18', weight: 166, bodyFat: 18.8, muscle: 44.9 },
-      { date: '2024-01-15', weight: 167, bodyFat: 19.1, muscle: 44.6 },
-    ],
-    achievements: [
-      { title: '7-Day Streak', description: 'Consistent logging', icon: <Star />, color: '#FFD700' },
-      { title: 'Weight Loss', description: 'Lost 5 lbs this month', icon: <TrendingUp />, color: '#4CAF50' },
-      { title: 'Active User', description: 'Logged in 20 days', icon: <FitnessCenter />, color: '#2196F3' },
-    ],
-  });
+  const achievements = [
+    { title: `${dashboardData.stats.currentStreak}-Day Streak`, description: 'Consistent logging', icon: <Star />, color: '#FFD700' },
+    { title: 'Active User', description: `${dashboardData.stats.progressEntries} progress entries`, icon: <FitnessCenter />, color: '#2196F3' },
+    { title: 'Health Focused', description: `${dashboardData.stats.totalConsultations} consultations`, icon: <TrendingUp />, color: '#4CAF50' },
+  ];
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -132,6 +90,16 @@ const Dashboard = () => {
     if (hour < 18) return 'Good Afternoon';
     return 'Good Evening';
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      </Box>
+    );
+  }
 
   const quickActions = [
     {
@@ -143,7 +111,7 @@ const Dashboard = () => {
     },
     {
       title: 'Book Consultation',
-      description: 'Schedule with certified experts',
+      description: 'Schedule consultations with certified experts',
       icon: <Event />,
       color: '#FF9800',
       path: '/consultations',
@@ -446,7 +414,7 @@ const Dashboard = () => {
 
       <Grid container spacing={3}>
         {/* Recent Consultations */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={4}>
           <Card sx={{ borderRadius: 3 }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -509,7 +477,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* Recent Orders */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={4}>
           <Card sx={{ borderRadius: 3 }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -572,7 +540,86 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </Grid>
+
       </Grid>
+
+      {/* User Notifications Section */}
+      <Box sx={{ mt: 4, mb: 4 }}>
+        <Card sx={{ 
+          borderRadius: 4,
+          background: 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%)',
+          color: '#ea580c',
+          boxShadow: '0 4px 20px rgba(234, 88, 12, 0.15)',
+          border: '1px solid rgba(234, 88, 12, 0.2)',
+          backdropFilter: 'blur(10px)',
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'linear-gradient(45deg, transparent 30%, rgba(234, 88, 12, 0.05) 50%, transparent 70%)',
+            animation: 'shimmer 3s infinite',
+          }
+        }}>
+          {/* Animated fitness icons */}
+          <Box sx={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            animation: 'bounce 2s infinite',
+            opacity: 0.4
+          }}>
+            <MonitorWeight sx={{ color: '#ea580c', fontSize: 32 }} />
+          </Box>
+          <Box sx={{
+            position: 'absolute',
+            bottom: 20,
+            left: 20,
+            animation: 'bounce 2s infinite 1s',
+            opacity: 0.3
+          }}>
+            <FitnessCenter sx={{ color: '#ea580c', fontSize: 28 }} />
+          </Box>
+          
+          <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Box sx={{ 
+                backgroundColor: 'rgba(234, 88, 12, 0.1)', 
+                borderRadius: '50%', 
+                p: 1.5, 
+                mr: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                animation: 'pulse 2s infinite'
+              }}>
+                <Notifications sx={{ color: '#ea580c', fontSize: 24 }} />
+              </Box>
+              <Typography variant="h5" fontWeight="bold" sx={{ color: '#c2410c' }}>
+                Fitness Updates
+              </Typography>
+            </Box>
+            <Typography variant="body2" sx={{ color: '#9a3412', mb: 2 }}>
+              Stay motivated with workout reminders, progress updates, and fitness tips
+            </Typography>
+            <Box sx={{ 
+              maxHeight: 400, 
+              overflow: 'auto',
+              backgroundColor: 'rgba(255, 255, 255, 0.6)',
+              borderRadius: 3,
+              p: 2,
+              backdropFilter: 'blur(5px)',
+              border: '1px solid rgba(234, 88, 12, 0.1)'
+            }}>
+              <NotificationPanel showMarkAll={true} />
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
 
       {/* Achievements Section */}
       <Box sx={{ mt: 4 }}>
@@ -580,7 +627,7 @@ const Dashboard = () => {
           Your Achievements
         </Typography>
         <Grid container spacing={3}>
-          {dashboardData.achievements.map((achievement, index) => (
+          {achievements.map((achievement, index) => (
             <Grid item xs={12} sm={4} key={index}>
               <Card sx={{ 
                 borderRadius: 3,

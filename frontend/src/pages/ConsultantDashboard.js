@@ -18,6 +18,7 @@ import {
   Paper,
   IconButton,
   LinearProgress,
+  CircularProgress,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -40,81 +41,59 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
+import NotificationPanel from '../components/Notifications/NotificationPanel';
 
 const ConsultantDashboard = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
-
-  // Dummy data for demonstration
-  const [dashboardData] = useState({
-    totalConsultations: 127,
-    completedConsultations: 98,
-    pendingConsultations: 12,
-    totalEarnings: 4567,
-    averageRating: 4.8,
-    monthlyEarnings: 1234,
-    clientSatisfaction: 96.5,
-    responseTime: 2.3,
-    recentConsultations: [
-      {
-        id: 1,
-        client_name: 'Sarah Johnson',
-        scheduled_at: '2024-01-20T10:00:00Z',
-        status: 'completed',
-        type: 'Nutrition Consultation',
-        rating: 5,
-      },
-      {
-        id: 2,
-        client_name: 'Mike Chen',
-        scheduled_at: '2024-01-19T14:30:00Z',
-        status: 'completed',
-        type: 'Fitness Planning',
-        rating: 4,
-      },
-      {
-        id: 3,
-        client_name: 'Emily Davis',
-        scheduled_at: '2024-01-18T09:15:00Z',
-        status: 'completed',
-        type: 'Weight Management',
-        rating: 5,
-      },
-    ],
-    upcomingConsultations: [
-      {
-        id: 4,
-        client_name: 'John Smith',
-        scheduled_at: '2024-01-22T11:00:00Z',
-        status: 'scheduled',
-        type: 'Nutrition Consultation',
-      },
-      {
-        id: 5,
-        client_name: 'Lisa Brown',
-        scheduled_at: '2024-01-23T15:30:00Z',
-        status: 'scheduled',
-        type: 'Fitness Planning',
-      },
-      {
-        id: 6,
-        client_name: 'David Wilson',
-        scheduled_at: '2024-01-24T09:00:00Z',
-        status: 'scheduled',
-        type: 'Weight Management',
-      },
-    ],
-    achievements: [
-      { title: 'Top Performer', description: 'Highest rated consultant this month', icon: <Star />, color: '#FFD700' },
-      { title: 'Client Champion', description: '96.5% satisfaction rate', icon: <People />, color: '#00bcd4' },
-      { title: 'Quick Responder', description: '2.3h average response time', icon: <AccessTime />, color: '#ff5722' },
-    ],
+  const [dashboardData, setDashboardData] = useState({
+    totalConsultations: 0,
+    completedConsultations: 0,
+    pendingConsultations: 0,
+    totalEarnings: 0,
+    averageRating: 0,
+    monthlyEarnings: 0,
+    clientSatisfaction: 0,
+    responseTime: 0,
+    recentConsultations: [],
+    upcomingConsultations: [],
   });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user && token && user.role === 'CONSULTANT') {
+      fetchDashboardData();
+    } else if (user?.role !== 'CONSULTANT') {
+      navigate('/dashboard');
+    }
+  }, [user, token, navigate]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/consultants/dashboard');
+      setDashboardData(response.data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        navigate('/login');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const achievements = [
+    { title: 'Top Performer', description: `${dashboardData.averageRating} average rating`, icon: <Star />, color: '#FFD700' },
+    { title: 'Client Champion', description: `${dashboardData.clientSatisfaction}% satisfaction rate`, icon: <People />, color: '#00bcd4' },
+    { title: 'Quick Responder', description: `${dashboardData.responseTime}h average response time`, icon: <AccessTime />, color: '#ff5722' },
+  ];
 
   const quickActions = [
     {
-      title: 'View Consultations',
-      description: 'Manage your consultation bookings',
+      title: 'My Consultations',
+      description: 'View consultations you provide to clients',
       icon: <Event />,
       color: '#00bcd4',
       action: () => navigate('/consultations'),
@@ -127,18 +106,18 @@ const ConsultantDashboard = () => {
       action: () => navigate('/profile'),
     },
     {
-      title: 'View Analytics',
-      description: 'Track your performance metrics',
-      icon: <Assessment />,
+      title: 'Set Availability',
+      description: 'Manage your available time slots',
+      icon: <Schedule />,
       color: '#00bcd4',
-      action: () => navigate('/consultant/analytics'),
+      action: () => navigate('/consultant/availability'),
     },
     {
-      title: 'Messages',
-      description: 'Communicate with clients',
+      title: 'Client Messages',
+      description: 'Communicate with your clients',
       icon: <Message />,
       color: '#ff5722',
-      action: () => navigate('/consultant/messages'),
+      action: () => navigate('/consultant/clients'),
     },
   ];
 
@@ -148,6 +127,16 @@ const ConsultantDashboard = () => {
     if (hour < 18) return 'Good Afternoon';
     return 'Good Evening';
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -540,13 +529,82 @@ const ConsultantDashboard = () => {
         </Grid>
       </Grid>
 
+      {/* Consultant Notifications Section */}
+      <Box sx={{ mt: 4, mb: 4 }}>
+        <Card sx={{ 
+          borderRadius: 4,
+          background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+          color: '#059669',
+          boxShadow: '0 4px 20px rgba(5, 150, 105, 0.15)',
+          border: '1px solid rgba(5, 150, 105, 0.2)',
+          backdropFilter: 'blur(10px)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Decorative elements */}
+          <Box sx={{
+            position: 'absolute',
+            top: -50,
+            right: -50,
+            width: 100,
+            height: 100,
+            borderRadius: '50%',
+            background: 'rgba(5, 150, 105, 0.05)',
+            opacity: 0.3
+          }} />
+          <Box sx={{
+            position: 'absolute',
+            bottom: -30,
+            left: -30,
+            width: 60,
+            height: 60,
+            borderRadius: '50%',
+            background: 'rgba(5, 150, 105, 0.05)',
+            opacity: 0.2
+          }} />
+          
+          <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Box sx={{ 
+                backgroundColor: 'rgba(5, 150, 105, 0.1)', 
+                borderRadius: '50%', 
+                p: 1.5, 
+                mr: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Support sx={{ color: '#059669', fontSize: 24 }} />
+              </Box>
+              <Typography variant="h5" fontWeight="bold" sx={{ color: '#047857' }}>
+                Consultant Alerts
+              </Typography>
+            </Box>
+            <Typography variant="body2" sx={{ color: '#065f46', mb: 2 }}>
+              Client consultations, appointment updates, and professional notifications
+            </Typography>
+            <Box sx={{ 
+              maxHeight: 400, 
+              overflow: 'auto',
+              backgroundColor: 'rgba(255, 255, 255, 0.6)',
+              borderRadius: 3,
+              p: 2,
+              backdropFilter: 'blur(5px)',
+              border: '1px solid rgba(5, 150, 105, 0.1)'
+            }}>
+              <NotificationPanel showMarkAll={true} />
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+
       {/* Achievements Section */}
       <Box sx={{ mt: 4 }}>
         <Typography variant="h5" fontWeight="bold" gutterBottom>
           Your Achievements
         </Typography>
         <Grid container spacing={3}>
-          {dashboardData.achievements.map((achievement, index) => (
+          {achievements.map((achievement, index) => (
             <Grid item xs={12} sm={4} key={index}>
               <Card sx={{ 
                 borderRadius: 3,

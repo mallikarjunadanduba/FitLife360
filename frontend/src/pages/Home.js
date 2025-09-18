@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -14,6 +14,11 @@ import {
   Avatar,
   Stack,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -32,17 +37,83 @@ import {
   CheckCircle,
   AccessTime,
   AttachMoney,
+  ShoppingCart,
+  Login,
+  Visibility,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 import AnimatedCard from '../components/Common/AnimatedCard';
 import AnimatedSection from '../components/Common/AnimatedSection';
 import AnimatedCounter from '../components/Common/AnimatedCounter';
 import FloatingActionButton from '../components/Common/FloatingActionButton';
+import apiClient from '../utils/axiosConfig';
 
 const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToCart } = useCart();
+  
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showAllProducts, setShowAllProducts] = useState(false);
+  const [initialDisplayCount] = useState(8); // Show only 8 products initially (2 rows of 4)
+
+  // Fetch featured products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get('/api/products/featured/');
+        setProducts(response.data); // Get all featured products
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const handleAddToCart = (product) => {
+    if (!user) {
+      setSelectedProduct(product);
+      setLoginDialogOpen(true);
+      return;
+    }
+    
+    addToCart(product);
+    // You could add a toast notification here
+  };
+
+  const handleLoginAndAddToCart = () => {
+    setLoginDialogOpen(false);
+    navigate('/login');
+  };
+
+  const handleViewProduct = (product) => {
+    if (!user) {
+      setSelectedProduct(product);
+      setLoginDialogOpen(true);
+      return;
+    }
+    
+    navigate(`/products/${product.id}`);
+  };
+
+  const handleViewMore = () => {
+    setShowAllProducts(!showAllProducts);
+  };
+
+  // Get products to display based on showAllProducts state
+  const displayedProducts = showAllProducts 
+    ? products 
+    : products.slice(0, initialDisplayCount);
 
   const features = [
     {
@@ -396,6 +467,319 @@ const Home = () => {
         </Container>
       </Box>
 
+      {/* Featured Products Section */}
+      <Box sx={{ 
+        py: 8, 
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'url("https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1920&h=1080&fit=crop") center/cover',
+          opacity: 0.03,
+          zIndex: 0,
+        },
+      }}>
+        <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
+          <AnimatedSection animation="fadeInUp" delay={0}>
+            <Box sx={{ textAlign: 'center', mb: 8 }}>
+              <Typography 
+                variant="h2" 
+                component="h2" 
+                gutterBottom 
+                fontWeight="bold"
+                sx={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  mb: 2,
+                }}
+              >
+                Featured Health Products
+              </Typography>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 4, maxWidth: '600px', mx: 'auto' }}>
+                Discover our top-rated supplements, fitness equipment, and healthy snacks
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+                {['Supplements', 'Equipment', 'Snacks'].map((category, index) => (
+                  <Chip
+                    key={category}
+                    label={category}
+                    sx={{
+                      backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                      color: 'primary.main',
+                      fontWeight: 'bold',
+                      px: 2,
+                      py: 1,
+                      fontSize: '0.9rem',
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </AnimatedSection>
+          
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress size={60} />
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {displayedProducts.map((product, index) => (
+                <Grid item xs={12} sm={6} md={3} key={product.id}>
+                  <AnimatedCard
+                    delay={index * 100}
+                    animation="fadeInUp"
+                    sx={{
+                      height: '480px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      borderRadius: 4,
+                      overflow: 'hidden',
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-12px) scale(1.02)',
+                        boxShadow: '0 20px 60px rgba(102, 126, 234, 0.3)',
+                        border: '1px solid rgba(102, 126, 234, 0.3)',
+                      },
+                    }}
+                  >
+                    {/* Product Image */}
+                    <Box
+                      sx={{
+                        height: 180,
+                        backgroundImage: product.image_url 
+                          ? `url(${product.image_url})` 
+                          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                          opacity: 0,
+                          transition: 'opacity 0.3s ease',
+                        },
+                        '&:hover::before': {
+                          opacity: 1,
+                        },
+                      }}
+                    >
+                      {!product.image_url && (
+                        <Avatar
+                          sx={{
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            width: 60,
+                            height: 60,
+                            fontSize: '24px',
+                          }}
+                        >
+                          <Store />
+                        </Avatar>
+                      )}
+                      <Chip
+                        label={product.category}
+                        sx={{
+                          position: 'absolute',
+                          top: 12,
+                          right: 12,
+                          backgroundColor: 'rgba(255,255,255,0.95)',
+                          color: 'text.primary',
+                          fontWeight: 'bold',
+                          fontSize: '0.75rem',
+                          height: '24px',
+                        }}
+                      />
+                    </Box>
+                    
+                    {/* Product Content */}
+                    <CardContent sx={{ flexGrow: 1, p: 2.5, display: 'flex', flexDirection: 'column' }}>
+                      <Typography 
+                        variant="h6" 
+                        component="h3" 
+                        fontWeight="bold" 
+                        sx={{ 
+                          mb: 1,
+                          fontSize: '1rem',
+                          lineHeight: 1.3,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {product.name}
+                      </Typography>
+                      
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary" 
+                        sx={{ 
+                          mb: 2, 
+                          flexGrow: 1,
+                          fontSize: '0.85rem',
+                          lineHeight: 1.4,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {product.description?.substring(0, 80)}...
+                      </Typography>
+                      
+                      {/* Rating */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              sx={{
+                                color: i < Math.floor(product.rating || 0) ? '#FFD700' : '#E0E0E0',
+                                fontSize: '14px',
+                              }}
+                            />
+                          ))}
+                        </Box>
+                        <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+                          ({product.rating?.toFixed(1) || '0.0'})
+                        </Typography>
+                      </Box>
+                      
+                      {/* Price and Stock */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" color="primary" fontWeight="bold" sx={{ fontSize: '1.1rem' }}>
+                          ${product.price?.toFixed(2)}
+                        </Typography>
+                        <Chip
+                          label={product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
+                          color={product.stock_quantity > 0 ? 'success' : 'error'}
+                          size="small"
+                          sx={{ fontSize: '0.7rem', height: '20px' }}
+                        />
+                      </Box>
+                    </CardContent>
+                    
+                    {/* Action Buttons */}
+                    <CardActions sx={{ p: 2.5, pt: 0, gap: 1 }}>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        startIcon={<Visibility />}
+                        onClick={() => handleViewProduct(product)}
+                        sx={{
+                          borderRadius: 2,
+                          fontSize: '0.8rem',
+                          height: '36px',
+                          borderColor: 'primary.main',
+                          color: 'primary.main',
+                          '&:hover': {
+                            borderColor: 'primary.dark',
+                            backgroundColor: 'primary.main',
+                            color: 'white',
+                          },
+                        }}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        size="small"
+                        startIcon={<ShoppingCart />}
+                        onClick={() => handleAddToCart(product)}
+                        disabled={product.stock_quantity <= 0}
+                        sx={{
+                          borderRadius: 2,
+                          fontSize: '0.8rem',
+                          height: '36px',
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                          },
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </CardActions>
+                  </AnimatedCard>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+          
+          {!loading && products.length === 0 && (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography variant="h6" color="text.secondary">
+                No featured products available at the moment.
+              </Typography>
+            </Box>
+          )}
+          
+          {/* View More / View Less Button */}
+          {!loading && products.length > initialDisplayCount && (
+            <Box sx={{ textAlign: 'center', mt: 4 }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleViewMore}
+                endIcon={showAllProducts ? <ArrowForward sx={{ transform: 'rotate(180deg)' }} /> : <ArrowForward />}
+                sx={{
+                  borderRadius: 3,
+                  px: 4,
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                  },
+                }}
+              >
+                {showAllProducts ? 'View Less' : `View More (${products.length - initialDisplayCount} more)`}
+              </Button>
+            </Box>
+          )}
+          
+          <Box sx={{ textAlign: 'center', mt: 4 }}>
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={() => navigate('/products')}
+              sx={{
+                borderRadius: 3,
+                px: 4,
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+              }}
+            >
+              Browse All Products
+            </Button>
+          </Box>
+        </Container>
+      </Box>
+
       {/* CTA Section */}
       <Box
         sx={{
@@ -526,6 +910,79 @@ const Home = () => {
         delay={2000}
         color="primary"
       />
+
+      {/* Login Required Dialog */}
+      <Dialog
+        open={loginDialogOpen}
+        onClose={() => setLoginDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            p: 2,
+          },
+        }}
+      >
+        <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
+          <Avatar
+            sx={{
+              bgcolor: 'primary.main',
+              width: 60,
+              height: 60,
+              mx: 'auto',
+              mb: 2,
+            }}
+          >
+            <Login />
+          </Avatar>
+          <Typography variant="h5" fontWeight="bold">
+            Login Required
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: 'center', py: 2 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            You need to be logged in to {selectedProduct ? 'add products to cart' : 'view product details'}.
+          </Typography>
+          {selectedProduct && (
+            <Card sx={{ p: 2, mb: 2, backgroundColor: 'background.default' }}>
+              <Typography variant="subtitle1" fontWeight="bold">
+                {selectedProduct.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                ${selectedProduct.price?.toFixed(2)}
+              </Typography>
+            </Card>
+          )}
+          <Typography variant="body2" color="text.secondary">
+            Sign in to your account or create a new one to continue shopping.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', gap: 2, pb: 3 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setLoginDialogOpen(false)}
+            sx={{ borderRadius: 2, px: 3 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleLoginAndAddToCart}
+            startIcon={<Login />}
+            sx={{
+              borderRadius: 2,
+              px: 4,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+              },
+            }}
+          >
+            Sign In
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

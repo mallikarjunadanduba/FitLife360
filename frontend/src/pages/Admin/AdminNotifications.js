@@ -37,7 +37,7 @@ import {
   Delete,
   Visibility
 } from '@mui/icons-material';
-import axios from 'axios';
+import apiClient from '../../utils/axiosConfig';
 
 const AdminNotifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -62,10 +62,14 @@ const AdminNotifications = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/notifications');
+      const response = await apiClient.get('/api/notifications/admin/all');
       setNotifications(response.data);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to fetch notifications');
+      console.error('Error fetching notifications:', err.response?.data);
+      const errorMessage = err.response?.data?.detail || 
+                          (Array.isArray(err.response?.data) ? err.response.data.map(e => e.msg).join(', ') : null) ||
+                          'Failed to fetch notifications';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -73,7 +77,7 @@ const AdminNotifications = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('/api/admin/users');
+      const response = await apiClient.get('/api/admin/users');
       setUsers(response.data);
     } catch (err) {
       console.error('Failed to fetch users:', err);
@@ -86,7 +90,7 @@ const AdminNotifications = () => {
       
       if (notificationForm.user_id) {
         // Send to specific user
-        await axios.post('/api/notifications/send', {
+        await apiClient.post('/api/notifications/send', {
           user_id: notificationForm.user_id,
           title: notificationForm.title,
           message: notificationForm.message,
@@ -96,7 +100,7 @@ const AdminNotifications = () => {
         });
       } else {
         // Broadcast to all users
-        await axios.post('/api/notifications/broadcast', {
+        await apiClient.post('/api/notifications/broadcast', {
           title: notificationForm.title,
           message: notificationForm.message,
           notification_type: notificationForm.type,
@@ -116,7 +120,11 @@ const AdminNotifications = () => {
       });
       fetchNotifications();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to send notification');
+      console.error('Error sending notification:', err.response?.data);
+      const errorMessage = err.response?.data?.detail || 
+                          (Array.isArray(err.response?.data) ? err.response.data.map(e => e.msg).join(', ') : null) ||
+                          'Failed to send notification';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -124,19 +132,27 @@ const AdminNotifications = () => {
 
   const markAsRead = async (notificationId) => {
     try {
-      await axios.put(`/api/notifications/${notificationId}/read`);
+      await apiClient.put(`/api/notifications/admin/${notificationId}/read`);
       fetchNotifications();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to mark notification as read');
+      console.error('Error marking notification as read:', err.response?.data);
+      const errorMessage = err.response?.data?.detail || 
+                          (Array.isArray(err.response?.data) ? err.response.data.map(e => e.msg).join(', ') : null) ||
+                          'Failed to mark notification as read';
+      setError(errorMessage);
     }
   };
 
   const markAllAsRead = async () => {
     try {
-      await axios.put('/api/notifications/read-all');
+      await apiClient.put('/api/notifications/admin/read-all');
       fetchNotifications();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to mark all notifications as read');
+      console.error('Error marking all notifications as read:', err.response?.data);
+      const errorMessage = err.response?.data?.detail || 
+                          (Array.isArray(err.response?.data) ? err.response.data.map(e => e.msg).join(', ') : null) ||
+                          'Failed to mark all notifications as read';
+      setError(errorMessage);
     }
   };
 
@@ -240,7 +256,12 @@ const AdminNotifications = () => {
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>User #{notification.user_id}</TableCell>
+                    <TableCell>
+                      {notification.user ? 
+                        `${notification.user.first_name} ${notification.user.last_name} (${notification.user.username})` : 
+                        `User #${notification.user_id}`
+                      }
+                    </TableCell>
                     <TableCell>
                       <Chip
                         label={notification.is_read ? 'Read' : 'Unread'}

@@ -1,14 +1,17 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Box } from '@mui/material';
+import { Box, ThemeProvider, CssBaseline } from '@mui/material';
+import { Global } from '@emotion/react';
 import { useAuth } from './contexts/AuthContext';
-import { CustomThemeProvider } from './contexts/ThemeContext';
+import { getThemeByRole } from './theme';
 import Navbar from './components/Layout/Navbar';
 import ModernLayout from './components/Layout/ModernLayout';
 import Footer from './components/Layout/Footer';
 import Home from './pages/Home';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
+import ForgotPassword from './pages/Auth/ForgotPassword';
+import ResetPassword from './pages/Auth/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import Calculators from './pages/Calculators';
@@ -31,27 +34,45 @@ import AdminNotifications from './pages/Admin/AdminNotifications';
 import AdminSettings from './pages/Admin/AdminSettings';
 import AdminFeedback from './pages/Admin/AdminFeedback';
 import ConsultantDashboard from './pages/ConsultantDashboard';
+import ConsultantAvailability from './pages/ConsultantAvailability';
+import ConsultantClients from './pages/ConsultantClients';
+import ConsultantAppointments from './pages/ConsultantAppointments';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import LoadingSpinner from './components/Common/LoadingSpinner';
 
+// CSS Animations for notification styling
+const globalStyles = `
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+`;
+
 function App() {
   const { user, loading } = useAuth();
+  const theme = getThemeByRole(user?.role);
 
   if (loading) {
     return <LoadingSpinner />;
   }
 
-  // Check if current route should use modern layout
-  const useModernLayout = (pathname) => {
-    const modernLayoutRoutes = [
-      '/dashboard', '/profile', '/calculators', '/progress', '/consultations', 
-      '/cart', '/checkout', '/orders', '/admin', '/consultant'
-    ];
-    return modernLayoutRoutes.some(route => pathname.startsWith(route));
-  };
 
   return (
-    <CustomThemeProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Global styles={globalStyles} />
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Routes>
           {/* Public Routes */}
@@ -71,6 +92,14 @@ function App() {
           <Route 
             path="/register" 
             element={user ? <Navigate to={user.role === 'ADMIN' ? '/admin' : user.role === 'CONSULTANT' ? '/consultant' : '/dashboard'} /> : <Register />} 
+          />
+          <Route 
+            path="/forgot-password" 
+            element={user ? <Navigate to={user.role === 'ADMIN' ? '/admin' : user.role === 'CONSULTANT' ? '/consultant' : '/dashboard'} /> : <ForgotPassword />} 
+          />
+          <Route 
+            path="/reset-password" 
+            element={user ? <Navigate to={user.role === 'ADMIN' ? '/admin' : user.role === 'CONSULTANT' ? '/consultant' : '/dashboard'} /> : <ResetPassword />} 
           />
           <Route path="/products" element={
             <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -112,6 +141,27 @@ function App() {
             <ProtectedRoute requiredRole="CONSULTANT">
               <ModernLayout>
                 <ConsultantDashboard />
+              </ModernLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/consultant/availability" element={
+            <ProtectedRoute requiredRole="CONSULTANT">
+              <ModernLayout>
+                <ConsultantAvailability />
+              </ModernLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/consultant/clients" element={
+            <ProtectedRoute requiredRole="CONSULTANT">
+              <ModernLayout>
+                <ConsultantClients />
+              </ModernLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/consultant/appointments" element={
+            <ProtectedRoute requiredRole="CONSULTANT">
+              <ModernLayout>
+                <ConsultantAppointments />
               </ModernLayout>
             </ProtectedRoute>
           } />
@@ -241,7 +291,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Box>
-    </CustomThemeProvider>
+    </ThemeProvider>
   );
 }
 

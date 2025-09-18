@@ -186,10 +186,17 @@ async def create_product_review(
 
 @router.get("/featured/", response_model=List[ProductResponse])
 async def get_featured_products(db: Session = Depends(get_db)):
-    """Get featured products (highest rated)"""
+    """Get featured products (highest rated, or all products if none meet criteria)"""
+    # First try to get products with rating >= 4.0
     products = db.query(Product).filter(
         Product.is_active == True,
         Product.rating >= 4.0
     ).order_by(Product.rating.desc()).limit(10).all()
+    
+    # If no high-rated products, get all active products
+    if not products:
+        products = db.query(Product).filter(
+            Product.is_active == True
+        ).order_by(Product.rating.desc(), Product.created_at.desc()).limit(10).all()
     
     return products

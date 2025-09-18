@@ -40,6 +40,8 @@ import {
   AccountCircle,
   LocalShipping,
   Support,
+  Schedule,
+  CalendarToday,
   FitnessCenter,
   Restaurant,
   MonitorWeight,
@@ -80,40 +82,41 @@ const ModernLayout = ({ children }) => {
     handleClose();
   };
 
-  // Navigation items based on user role
+  // Dynamic navigation items based on user role
   const getNavigationItems = () => {
-    const baseItems = [
-      { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard', roles: ['USER', 'CONSULTANT', 'ADMIN'] },
-      { text: 'Profile', icon: <Person />, path: '/profile', roles: ['USER', 'CONSULTANT', 'ADMIN'] },
-      { text: 'Health Calculators', icon: <Calculate />, path: '/calculators', roles: ['USER', 'CONSULTANT', 'ADMIN'] },
-      { text: 'Progress Tracking', icon: <TrendingUp />, path: '/progress', roles: ['USER', 'CONSULTANT', 'ADMIN'] },
-      { text: 'Consultations', icon: <Event />, path: '/consultations', roles: ['USER', 'CONSULTANT', 'ADMIN'] },
-      { text: 'Products', icon: <Store />, path: '/products', roles: ['USER', 'CONSULTANT', 'ADMIN'] },
-    ];
+    const roleBasedNavigation = {
+      USER: [
+        { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
+        { text: 'Profile', icon: <Person />, path: '/profile' },
+        { text: 'Health Calculators', icon: <Calculate />, path: '/calculators' },
+        { text: 'Progress Tracking', icon: <TrendingUp />, path: '/progress' },
+        { text: 'Book Consultation', icon: <Event />, path: '/consultations' },
+        { text: 'Products', icon: <Store />, path: '/products' },
+      ],
+      CONSULTANT: [
+        { text: 'Dashboard', icon: <Dashboard />, path: '/consultant' },
+        { text: 'Profile', icon: <Person />, path: '/profile' },
+        { text: 'My Consultations', icon: <Event />, path: '/consultations' },
+        { text: 'Set Availability', icon: <Schedule />, path: '/consultant/availability' },
+        { text: 'My Clients', icon: <People />, path: '/consultant/clients' },
+        { text: 'Appointments', icon: <CalendarToday />, path: '/consultant/appointments' },
+      ],
+      ADMIN: [
+        { text: 'Admin Dashboard', icon: <AdminPanelSettings />, path: '/admin' },
+        { text: 'Profile', icon: <Person />, path: '/profile' },
+        { text: 'User Management', icon: <People />, path: '/admin/users' },
+        { text: 'Consultant Management', icon: <Support />, path: '/admin/consultants' },
+        { text: 'Product Management', icon: <Store />, path: '/admin/products' },
+        { text: 'Order Management', icon: <LocalShipping />, path: '/admin/orders' },
+        { text: 'Analytics', icon: <Analytics />, path: '/admin/analytics' },
+        { text: 'Reports', icon: <Assessment />, path: '/admin/reports' },
+        { text: 'Notifications', icon: <Notifications />, path: '/admin/notifications' },
+        { text: 'Settings', icon: <Settings />, path: '/admin/settings' },
+        { text: 'Feedback', icon: <Feedback />, path: '/admin/feedback' },
+      ]
+    };
 
-    const adminItems = [
-      { text: 'Admin Dashboard', icon: <AdminPanelSettings />, path: '/admin', roles: ['ADMIN'] },
-      { text: 'User Management', icon: <People />, path: '/admin/users', roles: ['ADMIN'] },
-      { text: 'Consultant Management', icon: <Support />, path: '/admin/consultants', roles: ['ADMIN'] },
-      { text: 'Product Management', icon: <Store />, path: '/admin/products', roles: ['ADMIN'] },
-      { text: 'Order Management', icon: <LocalShipping />, path: '/admin/orders', roles: ['ADMIN'] },
-      { text: 'Analytics', icon: <Analytics />, path: '/admin/analytics', roles: ['ADMIN'] },
-      { text: 'Reports', icon: <Assessment />, path: '/admin/reports', roles: ['ADMIN'] },
-      { text: 'Notifications', icon: <Notifications />, path: '/admin/notifications', roles: ['ADMIN'] },
-      { text: 'Settings', icon: <Settings />, path: '/admin/settings', roles: ['ADMIN'] },
-      { text: 'Feedback', icon: <Feedback />, path: '/admin/feedback', roles: ['ADMIN'] },
-    ];
-
-    const consultantItems = [
-      { text: 'Consultant Dashboard', icon: <Dashboard />, path: '/consultant', roles: ['CONSULTANT'] },
-      { text: 'My Clients', icon: <People />, path: '/consultant/clients', roles: ['CONSULTANT'] },
-      { text: 'Appointments', icon: <Event />, path: '/consultant/appointments', roles: ['CONSULTANT'] },
-      { text: 'Resources', icon: <FitnessCenter />, path: '/consultant/resources', roles: ['CONSULTANT'] },
-    ];
-
-    return [...baseItems, ...adminItems, ...consultantItems].filter(item => 
-      item.roles.includes(user?.role)
-    );
+    return roleBasedNavigation[user?.role] || roleBasedNavigation.USER;
   };
 
   const navigationItems = getNavigationItems();
@@ -246,16 +249,18 @@ const ModernLayout = ({ children }) => {
             {location.pathname.startsWith('/admin/') && 'Admin Panel'}
           </Typography>
 
-          {/* Cart Icon */}
-          <IconButton
-            color="inherit"
-            onClick={() => navigate('/cart')}
-            sx={{ mr: 2 }}
-          >
-            <Badge badgeContent={getCartItemCount()} color="primary">
-              <ShoppingCart />
-            </Badge>
-          </IconButton>
+          {/* Cart Icon - Only for Users */}
+          {user?.role === 'USER' && (
+            <IconButton
+              color="inherit"
+              onClick={() => navigate('/cart')}
+              sx={{ mr: 2 }}
+            >
+              <Badge badgeContent={getCartItemCount()} color="primary">
+                <ShoppingCart />
+              </Badge>
+            </IconButton>
+          )}
 
           {/* User Menu */}
           <IconButton

@@ -137,6 +137,39 @@ async def get_user_notifications(
     
     return notifications
 
+@router.get("/admin/all")
+async def get_all_notifications_admin(
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get all notifications with user info (Admin only)"""
+    notifications = db.query(Notification).join(User).order_by(Notification.created_at.desc()).all()
+    
+    result = []
+    for notification in notifications:
+        user = db.query(User).filter(User.id == notification.user_id).first()
+        notification_data = {
+            "id": notification.id,
+            "user_id": notification.user_id,
+            "title": notification.title,
+            "message": notification.message,
+            "type": notification.type,
+            "is_read": notification.is_read,
+            "sent_via_email": notification.sent_via_email,
+            "sent_via_sms": notification.sent_via_sms,
+            "created_at": notification.created_at,
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name
+            } if user else None
+        }
+        result.append(notification_data)
+    
+    return result
+
 @router.put("/{notification_id}/read")
 async def mark_notification_read(
     notification_id: int,
@@ -147,6 +180,28 @@ async def mark_notification_read(
     notification = db.query(Notification).filter(
         Notification.id == notification_id,
         Notification.user_id == current_user.id
+    ).first()
+    
+    if not notification:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Notification not found"
+        )
+    
+    notification.is_read = True
+    db.commit()
+    
+    return {"message": "Notification marked as read"}
+
+@router.put("/admin/{notification_id}/read")
+async def mark_notification_read_admin(
+    notification_id: int,
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Mark any notification as read (Admin only)"""
+    notification = db.query(Notification).filter(
+        Notification.id == notification_id
     ).first()
     
     if not notification:
@@ -175,18 +230,40 @@ async def mark_all_notifications_read(
     
     return {"message": "All notifications marked as read"}
 
+@router.put("/admin/read-all")
+async def mark_all_notifications_read_admin(
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Mark all notifications as read (Admin only)"""
+    updated_count = db.query(Notification).filter(
+        Notification.is_read == False
+    ).update({"is_read": True})
+    
+    db.commit()
+    
+    return {"message": f"All {updated_count} notifications marked as read"}
+
 @router.post("/send")
 async def send_notification(
-    user_id: int,
-    title: str,
-    message: str,
-    notification_type: str,
-    send_email: bool = False,
-    send_sms: bool = False,
+    notification_data: dict,
     current_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
     """Send a notification to a specific user (Admin only)"""
+    user_id = notification_data.get("user_id")
+    title = notification_data.get("title")
+    message = notification_data.get("message")
+    notification_type = notification_data.get("notification_type")
+    send_email = notification_data.get("send_email", False)
+    send_sms = notification_data.get("send_sms", False)
+    
+    if not user_id or not title or not message or not notification_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing required fields: user_id, title, message, notification_type"
+        )
+    
     user = db.query(User).filter(User.id == user_id).first()
     
     if not user:
@@ -209,15 +286,23 @@ async def send_notification(
 
 @router.post("/broadcast")
 async def broadcast_notification(
-    title: str,
-    message: str,
-    notification_type: str,
-    send_email: bool = False,
-    send_sms: bool = False,
+    notification_data: dict,
     current_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
     """Broadcast notification to all active users (Admin only)"""
+    title = notification_data.get("title")
+    message = notification_data.get("message")
+    notification_type = notification_data.get("notification_type")
+    send_email = notification_data.get("send_email", False)
+    send_sms = notification_data.get("send_sms", False)
+    
+    if not title or not message or not notification_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing required fields: title, message, notification_type"
+        )
+    
     active_users = db.query(User).filter(User.is_active == True).all()
     
     sent_count = 0
@@ -237,3 +322,40 @@ async def broadcast_notification(
             print(f"Error sending notification to user {user.id}: {e}")
     
     return {"message": f"Notification broadcasted to {sent_count} users"}
+
+@router.delete("/{notification_id}")
+async def delete_notification(
+    notification_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a notification (user can only delete their own notifications)"""
+    notification = db.query(Notification).filter(
+        Notification.id == notification_id,
+        Notification.user_id == current_user.id
+    ).first()
+    
+    if not notification:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Notification not found"
+        )
+    
+    db.delete(notification)
+    db.commit()
+    
+    return {"message": "Notification deleted successfully"}
+
+@router.delete("/")
+async def delete_all_notifications(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete all notifications for current user"""
+    deleted_count = db.query(Notification).filter(
+        Notification.user_id == current_user.id
+    ).delete()
+    
+    db.commit()
+    
+    return {"message": f"Deleted {deleted_count} notifications"}

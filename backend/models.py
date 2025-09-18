@@ -61,7 +61,7 @@ class Consultant(Base):
     __tablename__ = "consultants"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
     specialization = Column(String(100))  # dietitian, fitness_trainer, nutritionist
     experience_years = Column(Integer)
     qualifications = Column(Text)
@@ -94,7 +94,7 @@ class Consultation(Base):
     __tablename__ = "consultations"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     consultant_id = Column(Integer, ForeignKey("consultants.id"))
     scheduled_time = Column(DateTime(timezone=True))
     duration_minutes = Column(Integer, default=60)
@@ -137,7 +137,7 @@ class Order(Base):
     __tablename__ = "orders"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     order_number = Column(String(50), unique=True, index=True)
     total_amount = Column(Float, nullable=False)
     status = Column(Enum(OrderStatus), default=OrderStatus.PENDING)
@@ -171,7 +171,7 @@ class ProgressRecord(Base):
     __tablename__ = "progress_records"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     weight = Column(Float)
     body_fat_percentage = Column(Float)
     muscle_mass = Column(Float)
@@ -187,7 +187,7 @@ class ProductReview(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"))
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     rating = Column(Integer, nullable=False)  # 1-5 stars
     review_text = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -200,13 +200,26 @@ class Notification(Base):
     __tablename__ = "notifications"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     title = Column(String(200), nullable=False)
     message = Column(Text, nullable=False)
     type = Column(String(50))  # consultation, order, reminder, etc.
     is_read = Column(Boolean, default=False)
     sent_via_email = Column(Boolean, default=False)
     sent_via_sms = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    user = relationship("User")
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token = Column(String(255), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    is_used = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships

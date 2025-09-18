@@ -1,14 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import timedelta, datetime
 from database import get_db
-from models import User, UserRole
-from schemas import UserCreate, UserResponse, Token, LoginRequest
+from models import User, UserRole, PasswordResetToken
+from schemas import UserCreate, UserResponse, Token, LoginRequest, ForgotPasswordRequest, ResetPasswordRequest
 from auth import (
     verify_password, get_password_hash, create_access_token,
     get_current_active_user, ACCESS_TOKEN_EXPIRE_MINUTES
 )
+import secrets
+import os
+from routers.notifications import send_email_notification
 
 router = APIRouter()
 
@@ -94,3 +97,110 @@ async def refresh_token(current_user: User = Depends(get_current_active_user)):
     )
     
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Send password reset email"""
+    # Check if user exists
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        # Don't reveal if email exists or not for security
+        return {"message": "If the email exists, a password reset link has been sent."}
+    
+    # Generate secure token
+    reset_token = secrets.token_urlsafe(32)
+    
+    # Set expiration time (1 hour from now)
+    expires_at = datetime.utcnow() + timedelta(hours=1)
+    
+    # Invalidate any existing tokens for this user
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user.id,
+        PasswordResetToken.is_used == False
+    ).update({"is_used": True})
+    
+    # Create new reset token
+    reset_token_record = PasswordResetToken(
+        user_id=user.id,
+        token=reset_token,
+        expires_at=expires_at
+    )
+    
+    db.add(reset_token_record)
+    db.commit()
+    
+    # Send email with reset link
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    reset_link = f"{frontend_url}/reset-password?token={reset_token}"
+    
+    email_subject = "Password Reset Request - FitLife360"
+    email_body = f"""
+    <html>
+    <body>
+        <h2>Password Reset Request</h2>
+        <p>Hello {user.first_name},</p>
+        <p>You have requested to reset your password for your FitLife360 account.</p>
+        <p>Click the link below to reset your password:</p>
+        <p><a href="{reset_link}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a></p>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you didn't request this password reset, please ignore this email.</p>
+        <br>
+        <p>Best regards,<br>FitLife360 Team</p>
+    </body>
+    </html>
+    """
+    
+    # Send email
+    email_sent = send_email_notification(user.email, email_subject, email_body)
+    
+    if not email_sent:
+        # If email fails, clean up the token
+        db.delete(reset_token_record)
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send password reset email. Please try again later."
+        )
+    
+    return {"message": "If the email exists, a password reset link has been sent."}
+
+@router.post("/reset-password")
+async def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Reset password using token"""
+    # Find the reset token
+    reset_token_record = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == request.token,
+        PasswordResetToken.is_used == False,
+        PasswordResetToken.expires_at > datetime.utcnow()
+    ).first()
+    
+    if not reset_token_record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token"
+        )
+    
+    # Get the user
+    user = db.query(User).filter(User.id == reset_token_record.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Validate new password
+    if len(request.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long"
+        )
+    
+    # Update password
+    user.hashed_password = get_password_hash(request.new_password)
+    
+    # Mark token as used
+    reset_token_record.is_used = True
+    
+    db.commit()
+    
+    return {"message": "Password has been reset successfully"}

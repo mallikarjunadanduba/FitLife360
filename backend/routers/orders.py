@@ -249,7 +249,7 @@ async def create_order_payment(
 @router.put("/{order_id}/status")
 async def update_order_status(
     order_id: int,
-    status: str,
+    status_data: dict,
     current_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -260,6 +260,13 @@ async def update_order_status(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Order not found"
+        )
+    
+    status = status_data.get("status")
+    if not status:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Status is required"
         )
     
     # Validate status

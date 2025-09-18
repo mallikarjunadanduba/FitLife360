@@ -26,15 +26,16 @@ import {
   Person,
   Calculate,
   TrendingUp,
-  People,
   Event,
   Store,
   AdminPanelSettings,
   Logout,
+  Notifications,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
+import GlobalNotificationPanel from '../Notifications/GlobalNotificationPanel';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ const Navbar = () => {
   
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -154,6 +156,18 @@ const Navbar = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <IconButton
                 color="inherit"
+                onClick={() => setNotificationPanelOpen(true)}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  },
+                }}
+              >
+                <Notifications />
+              </IconButton>
+              
+              <IconButton
+                color="inherit"
                 onClick={() => navigate('/cart')}
               >
                 <Badge badgeContent={getCartItemCount()} color="secondary">
@@ -235,6 +249,12 @@ const Navbar = () => {
       >
         {drawer}
       </Drawer>
+
+      {/* Global Notification Panel */}
+      <GlobalNotificationPanel 
+        open={notificationPanelOpen} 
+        onClose={() => setNotificationPanelOpen(false)} 
+      />
     </>
   );
 };

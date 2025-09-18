@@ -10,7 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Button,
   Chip,
   CircularProgress,
@@ -34,15 +33,13 @@ import {
 } from '@mui/material';
 import { 
   Person, 
-  Block, 
-  CheckCircle, 
   MoreVert, 
   PersonAdd, 
   Edit,
   Delete,
   AdminPanelSettings
 } from '@mui/icons-material';
-import axios from 'axios';
+import apiClient from '../../utils/axiosConfig';
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
@@ -70,7 +67,7 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('/api/admin/users');
+      const response = await apiClient.get('/api/admin/users');
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -82,7 +79,7 @@ const AdminUsers = () => {
 
   const handleToggleUserStatus = async (userId, isActive) => {
     try {
-      await axios.put(`/api/admin/users/${userId}/status`, { is_active: !isActive });
+      await apiClient.put(`/api/admin/users/${userId}/status`, { is_active: !isActive });
       fetchUsers();
       setSuccess('User status updated successfully');
     } catch (error) {
@@ -93,7 +90,7 @@ const AdminUsers = () => {
 
   const handleApproveDietitian = async (userId) => {
     try {
-      await axios.put(`/api/admin/users/${userId}/role`, { role: 'CONSULTANT' });
+      await apiClient.put(`/api/admin/users/${userId}/role`, { role: 'CONSULTANT' });
       fetchUsers();
       setSuccess('User approved as dietitian successfully');
     } catch (error) {
@@ -147,10 +144,10 @@ const AdminUsers = () => {
     e.preventDefault();
     try {
       if (editingUser) {
-        await axios.put(`/api/admin/users/${editingUser.id}`, formData);
+        await apiClient.put(`/api/admin/users/${editingUser.id}`, formData);
         setSuccess('User updated successfully');
       } else {
-        await axios.post('/api/admin/users', formData);
+        await apiClient.post('/api/admin/users', formData);
         setSuccess('User created successfully');
       }
       fetchUsers();
@@ -164,7 +161,7 @@ const AdminUsers = () => {
   const handleDelete = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        await axios.delete(`/api/admin/users/${userId}`);
+        await apiClient.delete(`/api/admin/users/${userId}`);
         setSuccess('User deleted successfully');
         fetchUsers();
       } catch (error) {

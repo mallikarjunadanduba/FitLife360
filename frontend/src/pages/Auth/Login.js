@@ -10,7 +10,6 @@ import {
   Link,
   CircularProgress,
   Grid,
-  Card,
   CardContent,
   Avatar,
   Chip,
@@ -20,8 +19,6 @@ import {
   Restaurant,
   MonitorWeight,
   Psychology,
-  TrendingUp,
-  People,
 } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -245,6 +242,24 @@ const Login = () => {
                     'Sign In'
                   )}
                 </Button>
+                
+                <Box textAlign="center" sx={{ mt: 2, mb: 2 }}>
+                  <Link
+                    component={RouterLink}
+                    to="/forgot-password"
+                    variant="body2"
+                    sx={{
+                      color: 'primary.main',
+                      fontWeight: 'bold',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    Forgot your password?
+                  </Link>
+                </Box>
                 
                 <Box textAlign="center" sx={{ mt: 3 }}>
                   <Typography variant="body2" color="text.secondary">

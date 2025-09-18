@@ -70,7 +70,7 @@ async def get_all_users(
 @router.put("/users/{user_id}/status")
 async def update_user_status(
     user_id: int,
-    is_active: bool,
+    status_data: dict,
     current_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -83,6 +83,13 @@ async def update_user_status(
             detail="User not found"
         )
     
+    is_active = status_data.get("is_active")
+    if is_active is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="is_active is required"
+        )
+    
     user.is_active = is_active
     db.commit()
     
@@ -91,7 +98,7 @@ async def update_user_status(
 @router.put("/users/{user_id}/role")
 async def update_user_role(
     user_id: int,
-    role: str,
+    role_data: dict,
     current_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -102,6 +109,13 @@ async def update_user_role(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
+        )
+    
+    role = role_data.get("role")
+    if not role:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="role is required"
         )
     
     user.role = role
@@ -222,7 +236,7 @@ async def get_all_consultants(
 @router.put("/consultants/{consultant_id}/status")
 async def update_consultant_status(
     consultant_id: int,
-    is_available: bool,
+    status_data: dict,
     current_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -233,6 +247,13 @@ async def update_consultant_status(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Consultant not found"
+        )
+    
+    is_available = status_data.get("is_available")
+    if is_available is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="is_available is required"
         )
     
     consultant.is_available = is_available
@@ -350,7 +371,8 @@ async def get_all_orders(
     db: Session = Depends(get_db)
 ):
     """Get all orders"""
-    orders = db.query(Order).order_by(Order.created_at.desc()).all()
+    from sqlalchemy.orm import joinedload
+    orders = db.query(Order).options(joinedload(Order.user), joinedload(Order.order_items).joinedload(OrderItem.product)).order_by(Order.created_at.desc()).all()
     return orders
 
 @router.get("/consultations", response_model=List[ConsultationResponse])
@@ -365,7 +387,7 @@ async def get_all_consultations(
 @router.put("/consultations/{consultation_id}/status")
 async def update_consultation_status(
     consultation_id: int,
-    status: str,
+    status_data: dict,
     current_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -376,6 +398,13 @@ async def update_consultation_status(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Consultation not found"
+        )
+    
+    status = status_data.get("status")
+    if not status:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Status is required"
         )
     
     consultation.status = status

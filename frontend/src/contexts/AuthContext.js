@@ -63,9 +63,28 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
+      
+      let errorMessage = 'Login failed';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Handle FastAPI validation errors
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || err.message || err).join(', ');
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.detail || 'Login failed',
+        error: errorMessage,
       };
     }
   };
@@ -78,9 +97,28 @@ export const AuthProvider = ({ children }) => {
       const loginResult = await login(userData.username, userData.password);
       return loginResult;
     } catch (error) {
+      console.error('Registration error:', error);
+      
+      let errorMessage = 'Registration failed';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Handle FastAPI validation errors
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || err.message || err).join(', ');
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.detail || 'Registration failed',
+        error: errorMessage,
       };
     }
   };
@@ -99,9 +137,28 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data);
       return { success: true };
     } catch (error) {
+      console.error('Profile update error:', error);
+      
+      let errorMessage = 'Profile update failed';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Handle FastAPI validation errors
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || err.message || err).join(', ');
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.detail || 'Profile update failed',
+        error: errorMessage,
       };
     }
   };

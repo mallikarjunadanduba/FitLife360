@@ -50,6 +50,14 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: Optional[str] = None
 
+# Password reset schemas
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -207,6 +215,7 @@ class OrderResponse(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime] = None
     order_items: List[OrderItemResponse]
+    user: UserResponse
 
     class Config:
         from_attributes = True
