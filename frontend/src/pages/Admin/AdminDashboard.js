@@ -34,7 +34,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../utils/axiosConfig';
 import { useAuth } from '../../contexts/AuthContext';
-import NotificationPanel from '../../components/Notifications/NotificationPanel';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -582,50 +581,6 @@ const AdminDashboard = () => {
           </Card>
         </Grid>
 
-        {/* Admin Notifications Section */}
-        <Grid item xs={12}>
-          <Card sx={{ 
-            borderRadius: 4,
-            background: 'linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)',
-            color: '#6b46c1',
-            boxShadow: '0 4px 20px rgba(139, 92, 246, 0.15)',
-            border: '1px solid rgba(139, 92, 246, 0.2)',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box sx={{ 
-                  backgroundColor: 'rgba(139, 92, 246, 0.1)', 
-                  borderRadius: '50%', 
-                  p: 1, 
-                  mr: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Notifications sx={{ color: '#8b5cf6', fontSize: 24 }} />
-                </Box>
-                <Typography variant="h5" fontWeight="bold" sx={{ color: '#6b46c1' }}>
-                  Admin Notifications
-                </Typography>
-              </Box>
-              <Typography variant="body2" sx={{ color: '#7c3aed', mb: 2 }}>
-                Stay updated with system alerts and user activities
-              </Typography>
-              <Box sx={{ 
-                maxHeight: 400, 
-                overflow: 'auto',
-                backgroundColor: 'rgba(255, 255, 255, 0.6)',
-                borderRadius: 3,
-                p: 2,
-                backdropFilter: 'blur(5px)',
-                border: '1px solid rgba(139, 92, 246, 0.1)'
-              }}>
-                <NotificationPanel showMarkAll={true} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
       </Grid>
     </Box>
   );

@@ -233,7 +233,7 @@ const Checkout = () => {
 
               {error && (
                 <Alert severity="error" sx={{ mb: 3 }}>
-                  {error}
+                  {typeof error === 'string' ? error : JSON.stringify(error)}
                 </Alert>
               )}
 

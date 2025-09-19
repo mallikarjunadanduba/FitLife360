@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
   IconButton,
+  Avatar,
   Chip,
   Button,
   Dialog,
@@ -16,20 +11,17 @@ import {
   DialogContent,
   DialogActions,
   Divider,
-  Avatar,
-  Badge,
-  Tooltip,
   CircularProgress,
   Alert,
   DialogContentText,
+  Select,
+  MenuItem,
+  FormControl,
 } from '@mui/material';
 import {
   Notifications,
-  NotificationsActive,
   MarkEmailRead,
-  MarkEmailUnread,
   Delete,
-  DeleteSweep,
   Close,
   CheckCircle,
   Warning,
@@ -39,6 +31,9 @@ import {
   LocalShipping,
   Event,
   Star,
+  Store,
+  Mail,
+  Person,
 } from '@mui/icons-material';
 import apiClient from '../../utils/axiosConfig';
 
@@ -49,6 +44,7 @@ const NotificationPanel = ({ onClose, showMarkAll = true }) => {
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     fetchNotifications();
@@ -126,7 +122,13 @@ const NotificationPanel = ({ onClose, showMarkAll = true }) => {
     }
   };
 
-  const getNotificationIcon = (type) => {
+  const getNotificationIcon = (type, title) => {
+    // Check title for specific icons
+    if (title?.toLowerCase().includes('admin')) return <Person />;
+    if (title?.toLowerCase().includes('store')) return <Store />;
+    if (title?.toLowerCase().includes('mail')) return <Mail />;
+    
+    // Fallback to type-based icons
     switch (type) {
       case 'consultation':
         return <Event />;
@@ -150,35 +152,35 @@ const NotificationPanel = ({ onClose, showMarkAll = true }) => {
   const getNotificationColor = (type) => {
     switch (type) {
       case 'consultation':
-        return 'primary';
+        return '#3b82f6'; // blue
       case 'order':
-        return 'success';
+        return '#10b981'; // green
       case 'reminder':
-        return 'warning';
+        return '#f59e0b'; // yellow
       case 'promotion':
-        return 'info';
+        return '#8b5cf6'; // purple
       case 'system':
-        return 'default';
+        return '#6b7280'; // gray
       case 'warning':
-        return 'warning';
+        return '#f59e0b'; // yellow
       case 'error':
-        return 'error';
+        return '#ef4444'; // red
       default:
-        return 'default';
+        return '#3b82f6'; // blue
     }
   };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = (now - date) / (1000 * 60 * 60);
+    const diffInMinutes = (now - date) / (1000 * 60);
 
-    if (diffInHours < 1) {
+    if (diffInMinutes < 1) {
       return 'Just now';
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)} hours ago`;
-    } else if (diffInHours < 48) {
-      return 'Yesterday';
+    } else if (diffInMinutes < 60) {
+      return `${Math.floor(diffInMinutes)} min ago`;
+    } else if (diffInMinutes < 1440) {
+      return `${Math.floor(diffInMinutes / 60)} hours ago`;
     } else {
       return date.toLocaleDateString();
     }
@@ -193,6 +195,9 @@ const NotificationPanel = ({ onClose, showMarkAll = true }) => {
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+  const filteredNotifications = filter === 'all' 
+    ? notifications 
+    : notifications.filter(n => n.type === filter);
 
   if (loading) {
     return (
@@ -203,162 +208,245 @@ const NotificationPanel = ({ onClose, showMarkAll = true }) => {
   }
 
   return (
-    <Box sx={{ width: 400, maxHeight: 600 }}>
+    <Box sx={{ width: 400, maxHeight: 600, backgroundColor: 'white', borderRadius: 2 }}>
       {/* Header */}
       <Box sx={{ 
         p: 2, 
         borderBottom: 1, 
-        borderColor: 'divider',
+        borderColor: '#e5e7eb',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Badge badgeContent={unreadCount} color="error">
-            <NotificationsActive />
-          </Badge>
-          <Typography variant="h6" fontWeight="bold">
-            Notifications
+          <Typography variant="h6" fontWeight="bold" sx={{ color: '#374151' }}>
+            All Notification
           </Typography>
+          {unreadCount > 0 && (
+            <Box sx={{
+              backgroundColor: '#fbbf24',
+              color: '#92400e',
+              borderRadius: '12px',
+              px: 1,
+              py: 0.5,
+              fontSize: '12px',
+              fontWeight: 'bold',
+              minWidth: '20px',
+              textAlign: 'center'
+            }}>
+              {unreadCount.toString().padStart(2, '0')}
+            </Box>
+          )}
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           {showMarkAll && unreadCount > 0 && (
-            <Tooltip title="Mark all as read">
-              <IconButton size="small" onClick={markAllAsRead}>
-                <MarkEmailRead />
-              </IconButton>
-            </Tooltip>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#3b82f6', 
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+              onClick={markAllAsRead}
+            >
+              Mark as all read
+            </Typography>
           )}
-          {notifications.length > 0 && (
-            <Tooltip title="Delete all notifications">
-              <IconButton size="small" onClick={() => setOpenDeleteDialog(true)}>
-                <DeleteSweep />
-              </IconButton>
-            </Tooltip>
-          )}
-          <Tooltip title="Close">
-            <IconButton size="small" onClick={onClose}>
-              <Close />
-            </IconButton>
-          </Tooltip>
+          <IconButton size="small" onClick={onClose} sx={{ color: '#6b7280' }}>
+            <Close />
+          </IconButton>
         </Box>
+      </Box>
+
+      {/* Filter Dropdown */}
+      <Box sx={{ p: 2, pb: 1 }}>
+        <FormControl fullWidth size="small">
+          <Select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            sx={{
+              backgroundColor: 'white',
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#d1d5db',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#9ca3af',
+              },
+            }}
+          >
+            <MenuItem value="all">All Notification</MenuItem>
+            <MenuItem value="system">System</MenuItem>
+            <MenuItem value="order">Order</MenuItem>
+            <MenuItem value="consultation">Consultation</MenuItem>
+            <MenuItem value="reminder">Reminder</MenuItem>
+            <MenuItem value="promotion">Promotion</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
 
       {/* Error Alert */}
       {error && (
         <Alert severity="error" sx={{ m: 2 }} onClose={() => setError(null)}>
-          {error}
+          {typeof error === 'string' ? error : JSON.stringify(error)}
         </Alert>
       )}
 
       {/* Notifications List */}
-      <Box sx={{ maxHeight: 500, overflow: 'auto' }}>
-        {notifications.length === 0 ? (
+      <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+        {filteredNotifications.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Notifications sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
-            <Typography variant="body2" color="text.secondary">
+            <Notifications sx={{ fontSize: 48, color: '#9ca3af', mb: 1 }} />
+            <Typography variant="body2" sx={{ color: '#6b7280' }}>
               No notifications yet
             </Typography>
           </Box>
         ) : (
-          <List sx={{ p: 0 }}>
-            {notifications.map((notification, index) => (
+          <Box sx={{ px: 2 }}>
+            {filteredNotifications.map((notification, index) => (
               <React.Fragment key={notification.id}>
-                <ListItem
+                <Box
                   sx={{
                     cursor: 'pointer',
-                    backgroundColor: notification.is_read ? 'transparent' : 'action.hover',
+                    p: 2,
+                    borderRadius: 1,
                     '&:hover': {
-                      backgroundColor: 'action.selected',
+                      backgroundColor: '#f9fafb',
                     },
-                    py: 1.5,
                   }}
                   onClick={() => handleNotificationClick(notification)}
-                  secondaryAction={
-                    <Tooltip title="Delete notification">
-                      <IconButton
-                        edge="end"
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteNotification(notification.id);
-                        }}
-                        sx={{ color: 'text.secondary' }}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </Tooltip>
-                  }
                 >
-                  <ListItemIcon sx={{ minWidth: 40 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                    {/* Icon */}
                     <Avatar
                       sx={{
-                        width: 32,
-                        height: 32,
-                        backgroundColor: `${getNotificationColor(notification.type)}.main`,
+                        width: 40,
+                        height: 40,
+                        backgroundColor: getNotificationColor(notification.type),
                         color: 'white',
+                        flexShrink: 0
                       }}
                     >
-                      {getNotificationIcon(notification.type)}
+                      {getNotificationIcon(notification.type, notification.title)}
                     </Avatar>
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    
+                    {/* Content */}
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      {/* Title and Time */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                         <Typography
                           variant="subtitle2"
                           fontWeight={notification.is_read ? 'normal' : 'bold'}
-                          sx={{ flexGrow: 1 }}
+                          sx={{ color: '#374151', fontSize: '14px' }}
                         >
                           {notification.title}
                         </Typography>
+                        <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '12px', flexShrink: 0, ml: 1 }}>
+                          {formatDate(notification.created_at)}
+                        </Typography>
+                      </Box>
+                      
+                      {/* Message */}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#6b7280',
+                          fontSize: '13px',
+                          lineHeight: 1.4,
+                          mb: 1,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {notification.message}
+                      </Typography>
+                      
+                      {/* Tags */}
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         {!notification.is_read && (
-                          <Box
+                          <Chip
+                            label="Unread"
+                            size="small"
                             sx={{
-                              width: 8,
-                              height: 8,
-                              borderRadius: '50%',
-                              backgroundColor: 'primary.main',
+                              backgroundColor: '#fef2f2',
+                              color: '#dc2626',
+                              fontSize: '11px',
+                              height: '20px',
+                              '& .MuiChip-label': {
+                                px: 1
+                              }
                             }}
                           />
                         )}
-                      </Box>
-                    }
-                    secondary={
-                      <Box>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            mb: 0.5,
-                          }}
-                        >
-                          {notification.message}
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {notification.type === 'system' && (
                           <Chip
-                            label={notification.type}
+                            label="New"
                             size="small"
-                            color={getNotificationColor(notification.type)}
-                            variant="outlined"
+                            sx={{
+                              backgroundColor: '#fffbeb',
+                              color: '#d97706',
+                              fontSize: '11px',
+                              height: '20px',
+                              '& .MuiChip-label': {
+                                px: 1
+                              }
+                            }}
                           />
-                          <Typography variant="caption" color="text.secondary">
-                            {formatDate(notification.created_at)}
-                          </Typography>
-                        </Box>
+                        )}
+                        {notification.title?.toLowerCase().includes('mail') && (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            sx={{
+                              backgroundColor: '#3b82f6',
+                              color: 'white',
+                              fontSize: '11px',
+                              height: '24px',
+                              px: 2,
+                              borderRadius: 1,
+                              textTransform: 'none',
+                              '&:hover': {
+                                backgroundColor: '#2563eb'
+                              }
+                            }}
+                            startIcon={<Mail sx={{ fontSize: 14 }} />}
+                          >
+                            Mail
+                          </Button>
+                        )}
                       </Box>
-                    }
-                  />
-                </ListItem>
-                {index < notifications.length - 1 && <Divider />}
+                    </Box>
+                  </Box>
+                </Box>
+                {index < filteredNotifications.length - 1 && (
+                  <Divider sx={{ borderColor: '#e5e7eb' }} />
+                )}
               </React.Fragment>
             ))}
-          </List>
+          </Box>
         )}
+      </Box>
+
+      {/* Footer */}
+      <Box sx={{ 
+        p: 2, 
+        borderTop: 1, 
+        borderColor: '#e5e7eb',
+        textAlign: 'center'
+      }}>
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            color: '#3b82f6', 
+            textDecoration: 'underline',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          View All
+        </Typography>
       </Box>
 
       {/* Notification Detail Dialog */}
@@ -372,11 +460,11 @@ const NotificationPanel = ({ onClose, showMarkAll = true }) => {
           {selectedNotification && (
             <Avatar
               sx={{
-                backgroundColor: `${getNotificationColor(selectedNotification.type)}.main`,
+                backgroundColor: getNotificationColor(selectedNotification.type),
                 color: 'white',
               }}
             >
-              {getNotificationIcon(selectedNotification.type)}
+              {getNotificationIcon(selectedNotification.type, selectedNotification.title)}
             </Avatar>
           )}
           <Typography variant="h6">
@@ -385,13 +473,7 @@ const NotificationPanel = ({ onClose, showMarkAll = true }) => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ mb: 2 }}>
-            <Chip
-              label={selectedNotification?.type}
-              color={getNotificationColor(selectedNotification?.type)}
-              variant="outlined"
-              sx={{ mb: 1 }}
-            />
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: '#6b7280', mb: 1 }}>
               {formatDate(selectedNotification?.created_at)}
             </Typography>
           </Box>

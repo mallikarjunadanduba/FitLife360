@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { LocalShipping, Visibility } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../utils/axiosConfig';
 import { useAuth } from '../contexts/AuthContext';
 
 const Orders = () => {
@@ -40,7 +40,7 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get('/api/orders');
+      const response = await apiClient.get('/api/orders');
       setOrders(response.data);
     } catch (error) {
       console.error('Error fetching orders:', error);

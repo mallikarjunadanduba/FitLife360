@@ -42,7 +42,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import NotificationPanel from '../components/Notifications/NotificationPanel';
 
 const ConsultantDashboard = () => {
   const { user, token } = useAuth();
@@ -529,74 +528,6 @@ const ConsultantDashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Consultant Notifications Section */}
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Card sx={{ 
-          borderRadius: 4,
-          background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-          color: '#059669',
-          boxShadow: '0 4px 20px rgba(5, 150, 105, 0.15)',
-          border: '1px solid rgba(5, 150, 105, 0.2)',
-          backdropFilter: 'blur(10px)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Decorative elements */}
-          <Box sx={{
-            position: 'absolute',
-            top: -50,
-            right: -50,
-            width: 100,
-            height: 100,
-            borderRadius: '50%',
-            background: 'rgba(5, 150, 105, 0.05)',
-            opacity: 0.3
-          }} />
-          <Box sx={{
-            position: 'absolute',
-            bottom: -30,
-            left: -30,
-            width: 60,
-            height: 60,
-            borderRadius: '50%',
-            background: 'rgba(5, 150, 105, 0.05)',
-            opacity: 0.2
-          }} />
-          
-          <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Box sx={{ 
-                backgroundColor: 'rgba(5, 150, 105, 0.1)', 
-                borderRadius: '50%', 
-                p: 1.5, 
-                mr: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Support sx={{ color: '#059669', fontSize: 24 }} />
-              </Box>
-              <Typography variant="h5" fontWeight="bold" sx={{ color: '#047857' }}>
-                Consultant Alerts
-              </Typography>
-            </Box>
-            <Typography variant="body2" sx={{ color: '#065f46', mb: 2 }}>
-              Client consultations, appointment updates, and professional notifications
-            </Typography>
-            <Box sx={{ 
-              maxHeight: 400, 
-              overflow: 'auto',
-              backgroundColor: 'rgba(255, 255, 255, 0.6)',
-              borderRadius: 3,
-              p: 2,
-              backdropFilter: 'blur(5px)',
-              border: '1px solid rgba(5, 150, 105, 0.1)'
-            }}>
-              <NotificationPanel showMarkAll={true} />
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
 
       {/* Achievements Section */}
       <Box sx={{ mt: 4 }}>

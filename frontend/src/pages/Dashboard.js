@@ -33,7 +33,6 @@ import AnimatedCard from '../components/Common/AnimatedCard';
 import AnimatedSection from '../components/Common/AnimatedSection';
 import AnimatedCounter from '../components/Common/AnimatedCounter';
 import apiClient from '../utils/axiosConfig';
-import NotificationPanel from '../components/Notifications/NotificationPanel';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -414,212 +413,200 @@ const Dashboard = () => {
 
       <Grid container spacing={3}>
         {/* Recent Consultations */}
-        <Grid item xs={12} md={4}>
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
+        <Grid item xs={12} md={6}>
+          <Card sx={{ borderRadius: 3, backgroundColor: '#f8f9fa' }}>
+            <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6" fontWeight="bold">Recent Consultations</Typography>
+                <Typography variant="h6" fontWeight="bold" sx={{ color: '#374151' }}>
+                  Recent Consultations
+                </Typography>
                 <Button 
                   size="small" 
+                  variant="text"
                   onClick={() => navigate('/consultations')}
                   endIcon={<ArrowForward />}
-                  sx={{ textTransform: 'none' }}
+                  sx={{ 
+                    textTransform: 'none',
+                    color: '#3b82f6',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    px: 2,
+                    py: 1,
+                    '&:hover': {
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      color: '#1e40af'
+                    }
+                  }}
                 >
                   View All
                 </Button>
               </Box>
               
-              <Stack spacing={2}>
-                {dashboardData.recentConsultations.map((consultation, index) => (
-                  <Paper
-                    key={consultation.id}
-                    sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      '&:hover': {
-                        backgroundColor: 'action.hover',
-                        cursor: 'pointer',
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Avatar sx={{ width: 40, height: 40, mr: 2, backgroundColor: 'primary.main' }}>
-                        {consultation.consultant?.user?.first_name?.[0]}
-                      </Avatar>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="subtitle1" fontWeight="bold">
-                          {consultation.consultant?.user?.first_name} {consultation.consultant?.user?.last_name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {consultation.type}
+              {dashboardData.recentConsultations.length > 0 ? (
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    '&:hover': {
+                      backgroundColor: '#f9fafb',
+                      cursor: 'pointer',
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar sx={{ 
+                      width: 40, 
+                      height: 40, 
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      fontWeight: 'bold'
+                    }}>
+                      {dashboardData.recentConsultations[0].consultant?.user?.first_name?.[0]}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle1" fontWeight="bold" sx={{ color: '#374151', mb: 0.5 }}>
+                        {dashboardData.recentConsultations[0].consultant?.user?.first_name} {dashboardData.recentConsultations[0].consultant?.user?.last_name}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#6b7280', mb: 1 }}>
+                        {dashboardData.recentConsultations[0].type}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <AccessTime fontSize="small" sx={{ color: '#9ca3af' }} />
+                        <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                          {new Date(dashboardData.recentConsultations[0].scheduled_time).toLocaleDateString()}
                         </Typography>
                       </Box>
-                      <Chip
-                        label={consultation.status}
-                        size="small"
-                        color={consultation.status === 'completed' ? 'success' : 'primary'}
-                        variant="outlined"
-                      />
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
-                      <AccessTime fontSize="small" sx={{ mr: 1 }} />
-                      <Typography variant="caption">
-                        {new Date(consultation.scheduled_time).toLocaleDateString()}
-                      </Typography>
-                    </Box>
-                  </Paper>
-                ))}
-              </Stack>
+                    <Chip
+                      label={dashboardData.recentConsultations[0].status}
+                      size="small"
+                      sx={{
+                        backgroundColor: dashboardData.recentConsultations[0].status === 'completed' ? '#d1fae5' : 
+                                        dashboardData.recentConsultations[0].status === 'scheduled' ? '#dbeafe' : '#fef2f2',
+                        color: dashboardData.recentConsultations[0].status === 'completed' ? '#065f46' : 
+                              dashboardData.recentConsultations[0].status === 'scheduled' ? '#1e40af' : '#dc2626',
+                        fontWeight: 'bold',
+                        fontSize: '11px',
+                        height: '24px'
+                      }}
+                    />
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                    No recent consultations
+                  </Typography>
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>
 
         {/* Recent Orders */}
-        <Grid item xs={12} md={4}>
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
+        <Grid item xs={12} md={6}>
+          <Card sx={{ borderRadius: 3, backgroundColor: '#f8f9fa' }}>
+            <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6" fontWeight="bold">Recent Orders</Typography>
+                <Typography variant="h6" fontWeight="bold" sx={{ color: '#374151' }}>
+                  Recent Orders
+                </Typography>
                 <Button 
                   size="small" 
+                  variant="text"
                   onClick={() => navigate('/orders')}
                   endIcon={<ArrowForward />}
-                  sx={{ textTransform: 'none' }}
+                  sx={{ 
+                    textTransform: 'none',
+                    color: '#3b82f6',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    px: 2,
+                    py: 1,
+                    '&:hover': {
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      color: '#1e40af'
+                    }
+                  }}
                 >
                   View All
                 </Button>
               </Box>
               
-              <Stack spacing={2}>
-                {dashboardData.recentOrders.map((order, index) => (
-                  <Paper
-                    key={order.id}
-                    sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      '&:hover': {
-                        backgroundColor: 'action.hover',
-                        cursor: 'pointer',
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Avatar sx={{ width: 40, height: 40, mr: 2, backgroundColor: 'secondary.main' }}>
-                        <AttachMoney />
-                      </Avatar>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="subtitle1" fontWeight="bold">
-                          Order #{order.order_number}
+              {dashboardData.recentOrders.length > 0 ? (
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    '&:hover': {
+                      backgroundColor: '#f9fafb',
+                      cursor: 'pointer',
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar sx={{ 
+                      width: 40, 
+                      height: 40, 
+                      backgroundColor: '#f59e0b',
+                      color: 'white',
+                      fontWeight: 'bold'
+                    }}>
+                      <AttachMoney />
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle1" fontWeight="bold" sx={{ color: '#374151', mb: 0.5 }}>
+                        Order
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#6b7280', mb: 0.5 }}>
+                        #{dashboardData.recentOrders[0].order_number}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#6b7280', mb: 1, fontSize: '13px' }}>
+                        {dashboardData.recentOrders[0].items.join(', ')}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Typography variant="h6" fontWeight="bold" sx={{ color: '#374151' }}>
+                          ${dashboardData.recentOrders[0].total_amount}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {order.items.join(', ')}
+                        <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                          {new Date(dashboardData.recentOrders[0].created_at).toLocaleDateString()}
                         </Typography>
                       </Box>
-                      <Chip
-                        label={order.status}
-                        size="small"
-                        color={order.status === 'delivered' ? 'success' : 'default'}
-                        variant="outlined"
-                      />
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Typography variant="h6" color="primary" fontWeight="bold">
-                        ${order.total_amount}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {new Date(order.created_at).toLocaleDateString()}
-                      </Typography>
-                    </Box>
-                  </Paper>
-                ))}
-              </Stack>
+                    <Chip
+                      label={dashboardData.recentOrders[0].status}
+                      size="small"
+                      sx={{
+                        backgroundColor: dashboardData.recentOrders[0].status === 'delivered' ? '#d1fae5' : 
+                                        dashboardData.recentOrders[0].status === 'shipped' ? '#dbeafe' : 
+                                        dashboardData.recentOrders[0].status === 'confirmed' ? '#f3f4f6' : '#fef2f2',
+                        color: dashboardData.recentOrders[0].status === 'delivered' ? '#065f46' : 
+                              dashboardData.recentOrders[0].status === 'shipped' ? '#1e40af' : 
+                              dashboardData.recentOrders[0].status === 'confirmed' ? '#374151' : '#dc2626',
+                        fontWeight: 'bold',
+                        fontSize: '11px',
+                        height: '24px'
+                      }}
+                    />
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                    No recent orders
+                  </Typography>
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>
 
       </Grid>
 
-      {/* User Notifications Section */}
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Card sx={{ 
-          borderRadius: 4,
-          background: 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%)',
-          color: '#ea580c',
-          boxShadow: '0 4px 20px rgba(234, 88, 12, 0.15)',
-          border: '1px solid rgba(234, 88, 12, 0.2)',
-          backdropFilter: 'blur(10px)',
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'linear-gradient(45deg, transparent 30%, rgba(234, 88, 12, 0.05) 50%, transparent 70%)',
-            animation: 'shimmer 3s infinite',
-          }
-        }}>
-          {/* Animated fitness icons */}
-          <Box sx={{
-            position: 'absolute',
-            top: 20,
-            right: 20,
-            animation: 'bounce 2s infinite',
-            opacity: 0.4
-          }}>
-            <MonitorWeight sx={{ color: '#ea580c', fontSize: 32 }} />
-          </Box>
-          <Box sx={{
-            position: 'absolute',
-            bottom: 20,
-            left: 20,
-            animation: 'bounce 2s infinite 1s',
-            opacity: 0.3
-          }}>
-            <FitnessCenter sx={{ color: '#ea580c', fontSize: 28 }} />
-          </Box>
-          
-          <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Box sx={{ 
-                backgroundColor: 'rgba(234, 88, 12, 0.1)', 
-                borderRadius: '50%', 
-                p: 1.5, 
-                mr: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                animation: 'pulse 2s infinite'
-              }}>
-                <Notifications sx={{ color: '#ea580c', fontSize: 24 }} />
-              </Box>
-              <Typography variant="h5" fontWeight="bold" sx={{ color: '#c2410c' }}>
-                Fitness Updates
-              </Typography>
-            </Box>
-            <Typography variant="body2" sx={{ color: '#9a3412', mb: 2 }}>
-              Stay motivated with workout reminders, progress updates, and fitness tips
-            </Typography>
-            <Box sx={{ 
-              maxHeight: 400, 
-              overflow: 'auto',
-              backgroundColor: 'rgba(255, 255, 255, 0.6)',
-              borderRadius: 3,
-              p: 2,
-              backdropFilter: 'blur(5px)',
-              border: '1px solid rgba(234, 88, 12, 0.1)'
-            }}>
-              <NotificationPanel showMarkAll={true} />
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
 
       {/* Achievements Section */}
       <Box sx={{ mt: 4 }}>

@@ -56,7 +56,7 @@ const AdminAnalytics = () => {
   if (error) {
     return (
       <Alert severity="error" sx={{ mb: 2 }}>
-        {error}
+        {typeof error === 'string' ? error : JSON.stringify(error)}
       </Alert>
     );
   }

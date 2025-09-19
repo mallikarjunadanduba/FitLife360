@@ -29,6 +29,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [reviewData, setReviewData] = useState({
+    product_id: parseInt(id),
     rating: 5,
     review_text: '',
   });
@@ -73,7 +74,7 @@ const ProductDetail = () => {
     try {
       await apiClient.post(`/api/products/${id}/reviews`, reviewData);
       setMessage('Review submitted successfully!');
-      setReviewData({ rating: 5, review_text: '' });
+      setReviewData({ product_id: parseInt(id), rating: 5, review_text: '' });
       fetchReviews();
       fetchProduct(); // Refresh product to update rating
     } catch (error) {
@@ -186,7 +187,7 @@ const ProductDetail = () => {
 
               {message && (
                 <Alert severity={message.includes('success') ? 'success' : 'error'} sx={{ mb: 2 }}>
-                  {message}
+                  {typeof message === 'string' ? message : JSON.stringify(message)}
                 </Alert>
               )}
             </CardContent>

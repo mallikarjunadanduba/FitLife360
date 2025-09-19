@@ -50,6 +50,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
+import NotificationDropdown from '../Notifications/NotificationDropdown';
 
 const drawerWidth = 280;
 
@@ -248,6 +249,9 @@ const ModernLayout = ({ children }) => {
             {location.pathname === '/consultant' && 'Consultant Dashboard'}
             {location.pathname.startsWith('/admin/') && 'Admin Panel'}
           </Typography>
+
+          {/* Notification Dropdown */}
+          <NotificationDropdown />
 
           {/* Cart Icon - Only for Users */}
           {user?.role === 'USER' && (

@@ -151,7 +151,7 @@ const Profile = () => {
 
               {message && (
                 <Alert severity={message.includes('success') ? 'success' : 'error'} sx={{ mb: 3 }}>
-                  {message}
+                  {typeof message === 'string' ? message : JSON.stringify(message)}
                 </Alert>
               )}
 
